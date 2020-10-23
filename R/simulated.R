@@ -106,7 +106,7 @@ simulated <- function(...) {
 #' @export
 simulated.default <- function(x, y, features="all", classes, ...) {
   
-  models = readRDS("R/models.rds")
+  models = readRDS("models.rds")
 
   if(!is.data.frame(x)) {
     stop("data argument must be a data.frame")
