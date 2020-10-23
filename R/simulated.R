@@ -104,7 +104,10 @@ simulated <- function(...) {
 
 #' @rdname simulated
 #' @export
-simulated.default <- function(x, y, features="all", ...) {
+simulated.default <- function(x, y, features="all", classes, ...) {
+  
+  models = readRDS("R/models.rds")
+
   if(!is.data.frame(x)) {
     stop("data argument must be a data.frame")
   }
@@ -127,15 +130,22 @@ simulated.default <- function(x, y, features="all", ...) {
 
   loadNamespace("randomForest")
 
-  measures <- imputation(mfe::metafeatures(x, y))
+  measures <- c(mfe::metafeatures(x,y, groups = c("infotheo","general",
+                "model.based","statistical","clustering"), summary = c("min","max","mean",
+                "sd")),
+              mfe::landmarking(x,y, summary = c("min","max","mean","sd"),
+                folds=5))
+  measures = do.call(base::c, measures)
+  measures <- imputation(measures)
+
   unlist(sapply(features, function(f) {
-    as.numeric(stats::predict(get(f), measures))
+    as.numeric(stats::predict(models[[f]][[1]], measures))
   }, simplify=FALSE))
 }
 
 #' @rdname simulated
 #' @export
-simulated.formula <- function(formula, data, features="all", ...) {
+simulated.formula <- function(formula, data, features="all", classes, ...) {
   if(!inherits(formula, "formula")) {
     stop("method is only for formula datas")
   }
@@ -147,7 +157,7 @@ simulated.formula <- function(formula, data, features="all", ...) {
   modFrame <- stats::model.frame(formula, data)
   attr(modFrame, "terms") <- NULL
 
-  simulated.default(modFrame[, -1], modFrame[, 1], features, ...)
+  simulated.default(modFrame[, -1], modFrame[, 1], features, classes, ...)
 }
 
 #' List the simulated simulated measures
@@ -158,8 +168,8 @@ simulated.formula <- function(formula, data, features="all", ...) {
 #' @examples
 #' ls.simulated()
 ls.simulated <- function() {
-  c("F1", "F1v", "F2", "F3", "F4", "N1", "N2", "N3", "N4", "T1", "LSC", "L1", 
-    "L2", "L3", "Density", "ClsCoef", "Hubs")
+  c("F2.P", "F3.P", "F4.P", "N1.P", "N2.P", "N3.P", "N4.P", "T1.P", "L1.P", "L2.P", "L3.P",
+    "F2.N", "F3.N", "F4.N", "N1.N", "N2.N", "N3.N", "N4.N", "T1.N", "L1.N", "L2.N", "L3.N")
 }
 
 ls.simulated.multiples <- function() {
